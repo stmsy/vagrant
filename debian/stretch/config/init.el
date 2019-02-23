@@ -1,9 +1,42 @@
 ;;; Manage/control package systems
-(package-initialize)
+(require 'package)
 (setq package-archives
   '(("gnu" . "http://elpa.gnu.org/packages/")
     ("melpa" . "http://melpa.org/packages/")
     ("org" . "http://orgmode.org/elpa/")))
+(package-initialize)
+(setq package-archives
+  '(("gnu" . "https://elpa.gnu.org/packages/")
+     ("melpa" . "https://melpa.org/packages/")
+     ("org" . "http://orgmode.org/elpa/")))
+(package-initialize)
+
+(defun require-package (package &optional min-version no-refresh)
+  "Install given PACKAGE, optionally requiring MIN-VERSION.
+If NO-REFRESH is non-nil, the available package lists will not be
+re-downloaded in order to locate PACKAGE."
+  (if (package-installed-p package min-version)
+    t
+    (if (or (assoc package package-archive-contents) no-refresh)
+      (if (boundp 'package-selected-packages)
+        ;; Record this as a package the user installed explicitly
+        (package-install package nil)
+        (package-install package))
+      (progn
+        (package-refresh-contents)
+        (require-package package min-version t)))))
+
+(defun maybe-require-package (package &optional min-version no-refresh)
+  "Try to install PACKAGE, and return non-nil if successful.
+  In the event of failure, return nil and print a warning message.
+  Optionally require MIN-VERSION.  If NO-REFRESH is non-nil, the
+  available package lists will not be re-downloaded in order to
+  locate PACKAGE."
+  (condition-case err
+    (require-package package min-version no-refresh)
+    (error
+      (message "Couldn't install optional package `%s': %S" package err)
+      nil)))
 
 ;;; Add path for customized config .el files
 ;; (add-to-list 'load-path "~/.emacs.d/site-lisp")
@@ -12,8 +45,14 @@
 ;;; TO-DO: The following is for 'flymake-proc-legacy-flymake' and
 ;;; needs to be fixed later
 ;;; Disable warnings
-;; (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake) 
+;; (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
 (setq warning-minimum-level :error)
+
+;;; Train white spaces
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(setq whitespace-space-regexp "\\(\u3000+\\)")
+(setq whitespace-action '(auto-cleanup))
+;; (global-whitespace-mode 1)
 
 ;;; Customize variables/faces
 (custom-set-variables
@@ -23,7 +62,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (markdown-mode yaml-mode magit-lfs dockerfile-mode flycheck flymake-shell flymake-json flymake-css ein emacs-setup request web-mode w3m py-autopep8 markdown-preview-mode magit jedi flymake-python-pyflakes autopair anything)))
+    (markdown-mode yaml-mode magit-lfs dockerfile-mode flycheck flymake-shell flymake-json flymake-css ein emacs-setup request web-mode w3m py-autopep8 markdown-preview-mode magit jedi flymake-python-pyflakes autopair auto-complete-auctex auctex anything)))
  '(safe-local-variable-values (quote ((code . utf-8))))
  '(send-mail-function (quote mailclient-send-it)))
 (custom-set-faces
@@ -71,7 +110,7 @@
 ;;; Show pairs (), {}, []
 (show-paren-mode t)
 ;; (show-paren-mode 1)
-(setq show-paren-style 'parenthesis) 
+(setq show-paren-style 'parenthesis)
 (setq show-paren-delay 0)
 (setq show-paren-style 'single)
 
