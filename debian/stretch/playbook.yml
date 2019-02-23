@@ -2,7 +2,7 @@
 - hosts: vagrants
   user: vagrant
   vars:
-    vagrant_home: "/home/vagrant" 
+    vagrant_home: "/home/vagrant"
   tasks:
     - name: install packages
       apt:
@@ -21,7 +21,12 @@
           - curl
           - llvm
           - libncurses5-dev
+          - libncursesw5-dev
           - xz-utils
+          - tk-dev
+          - libffi-dev
+          - liblzma-dev
+          - python-openssl
         state: present
       become: true
 
@@ -45,7 +50,7 @@
     - name: install anything-config
       git: repo=https://repo.or.cz/anything-config.git
            dest={{ vagrant_home }}/.emacs.d/site-lisp/anything-config
-           
+
     - name: install pyenv
       git: repo=https://github.com/pyenv/pyenv.git
            dest={{ vagrant_home }}/.pyenv
