@@ -1,0 +1,3 @@
+[submodule "ubuntu/config/anything-config"]
+	path = ubuntu/config/anything-config
+	url = https://github.com/stmsy/anything-config.git
