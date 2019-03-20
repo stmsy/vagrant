@@ -1,3 +1,6 @@
 [submodule "ubuntu/config/anything-config"]
 	path = ubuntu/config/anything-config
 	url = https://github.com/stmsy/anything-config.git
+[submodule "ubuntu/bionic/config/anything-config"]
+	path = ubuntu/bionic/config/anything-config
+	url = https://github.com/stmsy/anything-config.git
