@@ -1,15 +1,10 @@
 ;;; Manage/control package systems
 (require 'package)
+(package-initialize)
 (setq package-archives
   '(("gnu" . "http://elpa.gnu.org/packages/")
     ("melpa" . "http://melpa.org/packages/")
     ("org" . "http://orgmode.org/elpa/")))
-(package-initialize)
-(setq package-archives
-  '(("gnu" . "https://elpa.gnu.org/packages/")
-     ("melpa" . "https://melpa.org/packages/")
-     ("org" . "http://orgmode.org/elpa/")))
-(package-initialize)
 
 (defun require-package (package &optional min-version no-refresh)
   "Install given PACKAGE, optionally requiring MIN-VERSION.
@@ -42,11 +37,8 @@ re-downloaded in order to locate PACKAGE."
 ;; (add-to-list 'load-path "~/.emacs.d/site-lisp")
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 
-;;; TO-DO: The following is for 'flymake-proc-legacy-flymake' and
-;;; needs to be fixed later
 ;;; Disable warnings
-;; (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
-(setq warning-minimum-level :error)
+(setq warning-minimum-level :warning)
 
 ;;; Train white spaces
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -62,7 +54,7 @@ re-downloaded in order to locate PACKAGE."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (markdown-mode yaml-mode magit-lfs dockerfile-mode flycheck flymake-shell flymake-json flymake-css ein emacs-setup request web-mode w3m py-autopep8 markdown-preview-mode magit jedi flymake-python-pyflakes autopair auto-complete-auctex auctex anything)))
+    (cython-mode markdown-mode yaml-mode magit-lfs dockerfile-mode web-mode py-autopep8 markdown-preview-mode magit jedi autopair auto-complete-auctex auctex anything)))
  '(safe-local-variable-values (quote ((code . utf-8))))
  '(send-mail-function (quote mailclient-send-it)))
 (custom-set-faces
@@ -70,8 +62,6 @@ re-downloaded in order to locate PACKAGE."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(flymake-errline ((((class color)) (:foreground "#b03060" :weight bold))) t)
- '(flymake-warnline ((((class color)) (:foreground "#afaf5f" :weight bold))) t)
  '(markdown-header-delimiter-face ((t (:inherit org-mode-line-clock))))
  '(markdown-pre-face ((t (:inherit org-formula))))
  '(show-paren-match ((((class color) (background light)) (:background "#b03060")))))
@@ -129,15 +119,7 @@ re-downloaded in order to locate PACKAGE."
 
 ;;; C
 ;; Set default C indentation
-; (setq-default c-basic-offset 4)
-(defun my-c-mode-hook ()
-  (c-set-style "linux")
-  ; (c-set-style "bsd")
-  (setq tab-width 4)
-  (setq c-basic-offset tab-width))
-(add-hook 'c-mode-hook 'my-c-mode-hook)
-(setq-default indent-tabs-mode nil)
-(setq indent-line-function 'indent-relative-maybe)
+(setq c-default-style "linux" c-basic-offset 4)
 
 ;;; Python
 ;; Set default Python indentation
@@ -162,32 +144,10 @@ re-downloaded in order to locate PACKAGE."
 ; (define-key python-mode-map "\C-ct" 'jedi:goto-definition)
 ; (define-key python-mode-map "\C-cb" 'jedi:goto-definition-pop-marker)
 ; (define-key python-mode-map "\C-cr" 'helm-jedi-related-names)
-;; pyflakes
-(flymake-mode t)
-(require 'flymake-python-pyflakes)
-(add-hook 'python-mode-hook 'flymake-python-pyflakes-load)
-(add-hook 'find-file-hook 'flymake-find-file-hook)
-(when (load "flymake" t)
-  (defun flymake-pyflakes-init ()
-    (let* ((temp-file (flymake-init-create-temp-buffer-copy
-                       'flymake-create-temp-inplace))
-           (local-file (file-relative-name
-                        temp-file
-                        (file-name-directory buffer-file-name))))
-      (list "~/.pyenv/shims/pyflakes" (list local-file))))
-  (add-to-list 'flymake-allowed-file-name-masks
-               '("\\.py\\'" flymake-pyflakes-init)))
-; show message on mini-buffer
-(defun flymake-show-help ()
-  (when (get-char-property (point) 'flymake-overlay)
-    (let ((help (get-char-property (point) 'help-echo)))
-      (if help (message "%s" help)))))
-(add-hook 'post-command-hook 'flymake-show-help)
 ;; auto-pep8
 (require 'py-autopep8)
 (setq py-autopep8-options '("--max-line-length=79"))
-(setq flycheck-flake8-maximum-line-length 79)
-(add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
+;; (add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
 ;; autopair
 (autoload 'autopair-global-mode "autopair" nil t)
 (autopair-global-mode)
@@ -206,8 +166,6 @@ re-downloaded in order to locate PACKAGE."
 (add-hook 'js-mode-hook 'js-mode-hook)
 
 ;;; Web
-;; flymake
-(delete '("\\.html?\\'" flymake-xml-init) flymake-allowed-file-name-masks)
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
 (add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
@@ -289,6 +247,230 @@ re-downloaded in order to locate PACKAGE."
 (add-to-list 'auto-mode-alist '("\\.ya?ml$" . yaml-mode))
 (define-key yaml-mode-map "\C-m" 'newline-and-indent)
 
+;;; AUCTeX
+;; Auto-complete for AUCTeX
+(require 'auto-complete-auctex)
+;; Linux
+(when (eq system-type 'gnu/linux)
+  (with-eval-after-load 'tex
+    (defun TeX-evince-sync-view ()
+      (require 'url-util)
+      (let* ((uri (concat "file://" (url-encode-url
+                                     (expand-file-name
+                                      (concat file "." "pdf")))))
+             (owner (dbus-call-method
+                     :session "org.gnome.evince.Daemon"
+                     "/org/gnome/evince/Daemon"
+                     "org.gnome.evince.Daemon"
+                     "FindDocument"
+                     uri
+                     t)))
+        (if owner
+            (with-current-buffer (or (when TeX-current-process-region-p
+                                       (get-file-buffer (TeX-region-file t)))
+                                     (current-buffer))
+              (sleep-for 0.2)
+              (dbus-call-method
+               :session owner
+               "/org/gnome/evince/Window/0"
+               "org.gnome.evince.Window"
+               "SyncView"
+               (buffer-file-name)
+               (list :struct :int32 (line-number-at-pos) :int32 (1+ (current-column)))
+               :uint32 0))
+          (error "Couldn't find the Evince instance for %s" uri)))))
+  (with-eval-after-load 'tex-jp
+    (setq TeX-engine-alist '((pdfuptex "pdfupTeX"
+                                       "ptex2pdf -u -e -ot '%S %(mode)'"
+                                       "ptex2pdf -u -l -ot '%S %(mode)'"
+                                       "euptex")))
+    (setq japanese-TeX-engine-default 'pdfuptex)
+                                        ;(setq japanese-TeX-engine-default 'luatex)
+                                        ;(setq japanese-TeX-engine-default 'xetex)
+    (setq TeX-view-program-selection '((output-dvi "Evince")
+                                       (output-pdf "Evince")))
+                                        ;(setq TeX-view-program-selection '((output-dvi "Okular")
+                                        ;                                   (output-pdf "Okular")))
+    (setq japanese-LaTeX-default-style "bxjsarticle")
+                                        ;(setq japanese-LaTeX-default-style "ltjsarticle")
+    (dolist (command '("pTeX" "pLaTeX" "pBibTeX" "jTeX" "jLaTeX" "jBibTeX" "Mendex"))
+      (delq (assoc command TeX-command-list) TeX-command-list)))
+  (setq preview-image-type 'dvipng)
+  (setq TeX-source-correlate-method 'synctex)
+  (setq TeX-source-correlate-start-server t)
+  (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+  (add-hook 'LaTeX-mode-hook 'TeX-PDF-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  (add-hook 'LaTeX-mode-hook
+            (function (lambda ()
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk"
+                                       "latexmk %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-upLaTeX-pdfdvi"
+                                       "latexmk -e '$latex=q/uplatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -e '$dvipdf=q/dvipdfmx %%O -o %%D %%S/' -norc -gg -pdfdvi %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-upLaTeX-pdfdvi"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-upLaTeX-pdfps"
+                                       "latexmk -e '$latex=q/uplatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -e '$dvips=q/dvips %%O -z -f %%S | convbkmk -u > %%D/' -e '$ps2pdf=q/ps2pdf %%O %%S %%D/' -norc -gg -pdfps %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-upLaTeX-pdfps"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-pdfLaTeX"
+                                       "latexmk -e '$pdflatex=q/pdflatex %%O %S %(mode) %%S/' -e '$bibtex=q/bibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/makeindex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-pdfLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-LuaLaTeX"
+                                       "latexmk -e '$pdflatex=q/lualatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-LuaLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-LuaJITLaTeX"
+                                       "latexmk -e '$pdflatex=q/luajitlatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-LuaJITLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-XeLaTeX"
+                                       "latexmk -e '$pdflatex=q/xelatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-XeLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("xdg-open"
+                                       "xdg-open %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run xdg-open"))
+                        (add-to-list 'TeX-command-list
+                                     '("Evince"
+                                        ;"synctex view -i \"%n:0:%b\" -o %s.pdf -x \"evince -i %%{page+1} %%{output}\""
+                                       "TeX-evince-sync-view"
+                                       TeX-run-discard-or-function t t :help "Forward search with Evince"))
+                        (add-to-list 'TeX-command-list
+                                     '("fwdevince"
+                                       "fwdevince %s.pdf %n \"%b\""
+                                       TeX-run-discard-or-function t t :help "Forward search with Evince"))
+                        (add-to-list 'TeX-command-list
+                                     '("Okular"
+                                       "okular --unique \"file:\"%s.pdf\"#src:%n %a\""
+                                       TeX-run-discard-or-function t t :help "Forward search with Okular"))
+                        (add-to-list 'TeX-command-list
+                                     '("zathura"
+                                       "zathura -x \"emacsclient --no-wait +%%{line} %%{input}\" --synctex-forward \"%n:0:%b\" %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Forward search with zathura"))
+                        (add-to-list 'TeX-command-list
+                                     '("qpdfview"
+                                       "qpdfview --unique \"\"%s.pdf\"#src:%b:%n:0\""
+                                       TeX-run-discard-or-function t t :help "Forward search with qpdfview"))
+                        (add-to-list 'TeX-command-list
+                                     '("TeXworks"
+                                       "synctex view -i \"%n:0:%b\" -o %s.pdf -x \"texworks --position=%%{page+1} %%{output}\""
+                                       TeX-run-discard-or-function t t :help "Run TeXworks"))
+                        (add-to-list 'TeX-command-list
+                                     '("TeXstudio"
+                                       "synctex view -i \"%n:0:%b\" -o %s.pdf -x \"texstudio --pdf-viewer-only --page %%{page+1} %%{output}\""
+                                       TeX-run-discard-or-function t t :help "Run TeXstudio"))
+                        (add-to-list 'TeX-command-list
+                                     '("MuPDF"
+                                       "mupdf %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run MuPDF"))
+                        (add-to-list 'TeX-command-list
+                                     '("Firefox"
+                                       "firefox -new-window %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run Mozilla Firefox"))
+                        (add-to-list 'TeX-command-list
+                                     '("Chromium"
+                                       "chromium --new-window %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run Chromium"))))))
+
+;; macOS
+(when (eq system-type 'darwin)
+  (setenv "PATH"
+          (concat (getenv "PATH") ":/Library/TeX/texbin"))
+  (with-eval-after-load 'tex-jp
+    (setq TeX-engine-alist '((pdfuptex "pdfupTeX"
+                                       "/Library/TeX/texbin/ptex2pdf -u -e -ot '%S %(mode)'"
+                                       "/Library/TeX/texbin/ptex2pdf -u -l -ot '%S %(mode)'"
+                                       "euptex")))
+    (setq japanese-TeX-engine-default 'pdfuptex)
+                                        ;(setq japanese-TeX-engine-default 'luatex)
+                                        ;(setq japanese-TeX-engine-default 'xetex)
+    (setq TeX-view-program-selection '((output-dvi "displayline")
+                                       (output-pdf "displayline")))
+                                        ;(setq TeX-view-program-selection '((output-dvi "Skim")
+                                        ;                                   (output-pdf "Skim")))
+    (setq japanese-LaTeX-default-style "bxjsarticle")
+                                        ;(setq japanese-LaTeX-default-style "ltjsarticle")
+    (dolist (command '("pTeX" "pLaTeX" "pBibTeX" "jTeX" "jLaTeX" "jBibTeX" "Mendex"))
+      (delq (assoc command TeX-command-list) TeX-command-list)))
+  (setq preview-image-type 'dvipng)
+  (setq TeX-source-correlate-method 'synctex)
+  (setq TeX-source-correlate-start-server t)
+  (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+  (add-hook 'LaTeX-mode-hook 'TeX-PDF-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  (add-hook 'LaTeX-mode-hook
+            (function (lambda ()
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk"
+                                       "/Library/TeX/texbin/latexmk %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-upLaTeX-pdfdvi"
+                                       "/Library/TeX/texbin/latexmk -e '$latex=q/uplatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -e '$dvipdf=q/dvipdfmx %%O -o %%D %%S/' -norc -gg -pdfdvi %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-upLaTeX-pdfdvi"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-upLaTeX-pdfps"
+                                       "/Library/TeX/texbin/latexmk -e '$latex=q/uplatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -e '$dvips=q/dvips %%O -z -f %%S | convbkmk -u > %%D/' -e '$ps2pdf=q/ps2pdf %%O %%S %%D/' -norc -gg -pdfps %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-upLaTeX-pdfps"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-pdfLaTeX"
+                                       "/Library/TeX/texbin/latexmk -e '$pdflatex=q/pdflatex %%O %S %(mode) %%S/' -e '$bibtex=q/bibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/makeindex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-pdfLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-LuaLaTeX"
+                                       "/Library/TeX/texbin/latexmk -e '$pdflatex=q/lualatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-LuaLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-LuaJITLaTeX"
+                                       "/Library/TeX/texbin/latexmk -e '$pdflatex=q/luajitlatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-LuaJITLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("Latexmk-XeLaTeX"
+                                       "/Library/TeX/texbin/latexmk -e '$pdflatex=q/xelatex %%O %S %(mode) %%S/' -e '$bibtex=q/upbibtex %%O %%B/' -e '$biber=q/biber %%O --bblencoding=utf8 -u -U --output_safechars %%B/' -e '$makeindex=q/upmendex %%O -o %%D %%S/' -norc -gg -pdf %t"
+                                       TeX-run-TeX nil (latex-mode) :help "Run Latexmk-XeLaTeX"))
+                        (add-to-list 'TeX-command-list
+                                     '("displayline"
+                                       "/Applications/Skim.app/Contents/SharedSupport/displayline %n %s.pdf \"%b\""
+                                       TeX-run-discard-or-function t t :help "Forward search with Skim"))
+                        (add-to-list 'TeX-command-list
+                                     '("Skim"
+                                       "/usr/bin/open -a Skim.app %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run Skim"))
+                        (add-to-list 'TeX-command-list
+                                     '("Preview"
+                                       "/usr/bin/open -a Preview.app %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run Preview"))
+                        (add-to-list 'TeX-command-list
+                                     '("TeXShop"
+                                       "/usr/bin/open -a TeXShop.app %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run TeXShop"))
+                        (add-to-list 'TeX-command-list
+                                     '("TeXworks"
+                                       "/Library/TeX/texbin/synctex view -i \"%n:0:%b\" -o %s.pdf -x \"/Applications/TeXworks.app/Contents/MacOS/TeXworks --position=%%{page+1} %%{output}\""
+                                       TeX-run-discard-or-function t t :help "Run TeXworks"))
+                        (add-to-list 'TeX-command-list
+                                     '("TeXstudio"
+                                       "/Library/TeX/texbin/synctex view -i \"%n:0:%b\" -o %s.pdf -x \"/Applications/texstudio.app/Contents/MacOS/texstudio --pdf-viewer-only --page %%{page+1} %%{output}\""
+                                       TeX-run-discard-or-function t t :help "Run TeXstudio"))
+                        (add-to-list 'TeX-command-list
+                                     '("Firefox"
+                                       "/usr/bin/open -a Firefox.app %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run Mozilla Firefox"))
+                        (add-to-list 'TeX-command-list
+                                     '("acroread"
+                                       "/usr/bin/open -a \"Adobe Acrobat Reader DC.app\" %s.pdf"
+                                       TeX-run-discard-or-function t t :help "Run Adobe Acrobat Reader DC"))))))
+;; RefTeX with AUCTeX
+(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq reftex-plug-into-AUCTeX t)
+;; kinsoku.el
+(setq kinsoku-limit 10)
+
 ;;;IPython Notebook
 ;; (require 'ein)
 ;; (require 'ein-loaddefs)
@@ -297,3 +479,4 @@ re-downloaded in order to locate PACKAGE."
 ;; (add-hook 'ein:connect-mode-hook 'ein:jedi-setup)
 
 (put 'set-goal-column 'disabled nil)
+(put 'upcase-region 'disabled nil)

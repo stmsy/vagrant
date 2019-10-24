@@ -1,6 +1,5 @@
 # Local executables
-LOCALBINPATH="/usr/local/bin"
-export PATH="$LOCALBINPATH:$PATH"
+export PATH="/usr/local/bin:$PATH"
 
 # pyenv & pyenv-virtualenv
 export PYENV_ROOT="$HOME/.pyenv"
