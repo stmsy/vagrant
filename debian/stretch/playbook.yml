@@ -62,5 +62,5 @@
            version=master
 
     - name: change zsh as login shell
-      shell: chsh -s /usr/bin/zsh
+      shell: chsh -s /usr/bin/zsh vagrant
       become: true
