@@ -1,0 +1,66 @@
+---
+- hosts: vagrants
+  user: vagrant
+  vars:
+    vagrant_home: "/home/vagrant"
+  tasks:
+    - name: install packages
+      apt:
+        name:
+          - emacs
+          - zsh
+          - git
+          - make
+          - build-essential
+          - libssl-dev
+          - zlib1g-dev
+          - libbz2-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - wget
+          - curl
+          - llvm
+          - libncurses5-dev
+          - libncursesw5-dev
+          - xz-utils
+          - tk-dev
+          - libffi-dev
+          - liblzma-dev
+          - python-openssl
+        state: present
+      become: true
+
+    - name: copy .zshrc
+      copy: src=config/zshrc dest={{ vagrant_home }}/.zshrc
+
+    - name: create /opt/git
+      file: path=/opt/git state=directory
+      become: true
+
+    - name: copy gitbranch.sh
+      copy: src=config/gitbranch.sh dest=/opt/git/gitbranch.sh
+      become: true
+
+    - name: create ~/.emacs.d/site-lisp
+      file: path={{ vagrant_home }}/.emacs.d/site-lisp state=directory
+
+    - name: copy init.el
+      copy: src=config/init.el dest={{ vagrant_home }}/.emacs.d/init.el
+
+    - name: install anything-config
+      git: repo=https://repo.or.cz/anything-config.git
+           dest={{ vagrant_home }}/.emacs.d/site-lisp/anything-config
+
+    - name: install pyenv
+      git: repo=https://github.com/pyenv/pyenv.git
+           dest={{ vagrant_home }}/.pyenv
+           version=master
+
+    - name: install pyenv-virtualenv
+      git: repo=https://github.com/pyenv/pyenv-virtualenv.git
+           dest={{ vagrant_home }}/.pyenv/plugins/pyenv-virtualenv
+           version=master
+
+    - name: change zsh as login shell
+      shell: chsh -s /usr/bin/zsh vagrant
+      become: true
