@@ -30,37 +30,77 @@
         state: present
       become: true
 
-    - name: copy .zshrc
-      copy: src=config/zshrc dest={{ vagrant_home }}/.zshrc
+    - name: download config files
+      git:
+        repo: https://github.com/stmsy/config.git
+        dest: '{{ vagrant_home }}/github/config'
+        version: master
 
     - name: create /opt/git
-      file: path=/opt/git state=directory
+      file:
+        path: /opt/git
+        state: directory
       become: true
 
-    - name: copy gitbranch.sh
-      copy: src=config/gitbranch.sh dest=/opt/git/gitbranch.sh
+    - name: symlink to gitbranch.sh
+      file:
+        src: '{{ vagrant_home }}/github/config/git/gitbranch.sh'
+        dest: /opt/git/gitbranch.sh
+        state: link
       become: true
 
     - name: create ~/.emacs.d/site-lisp
-      file: path={{ vagrant_home }}/.emacs.d/site-lisp state=directory
+      file:
+        path: '{{ vagrant_home }}/.emacs.d/site-lisp'
+        state: directory
 
-    - name: copy init.el
-      copy: src=config/init.el dest={{ vagrant_home }}/.emacs.d/init.el
+    - name: symlink to init.el
+      file:
+        src: '{{ vagrant_home }}/github/config/emacs/init.el'
+        dest: '{{ vagrant_home }}/.emacs.d/init.el'
+        state: link
 
     - name: install anything-config
-      git: repo=https://repo.or.cz/anything-config.git
-           dest={{ vagrant_home }}/.emacs.d/site-lisp/anything-config
+      git:
+        repo: https://repo.or.cz/anything-config.git
+        dest: '{{ vagrant_home }}/.emacs.d/site-lisp/anything-config'
 
     - name: install pyenv
-      git: repo=https://github.com/pyenv/pyenv.git
-           dest={{ vagrant_home }}/.pyenv
-           version=master
+      git:
+        repo: https://github.com/pyenv/pyenv.git
+        dest: '{{ vagrant_home }}/.pyenv'
+        version: master
 
     - name: install pyenv-virtualenv
-      git: repo=https://github.com/pyenv/pyenv-virtualenv.git
-           dest={{ vagrant_home }}/.pyenv/plugins/pyenv-virtualenv
-           version=master
+      git:
+        repo: https://github.com/pyenv/pyenv-virtualenv.git
+        dest: '{{ vagrant_home }}/.pyenv/plugins/pyenv-virtualenv'
+        version: master
+
+    - name: install rbenv
+      git:
+        repo: https://github.com/rbenv/rbenv.git
+        dest: '{{ vagrant_home }}/.rbenv'
+        version: master
+
+    - name: install nodenv
+      git:
+        repo: https://github.com/nodenv/nodenv.git
+        dest: '{{ vagrant_home }}/.nodenv'
+        version: master
+
+    - name: symlink to .zshrc
+      file:
+        src: '{{ vagrant_home }}/github/config/zsh/zshrc'
+        dest: '{{ vagrant_home }}/.zshrc'
+        state: link
 
     - name: change zsh as login shell
       shell: chsh -s /usr/bin/zsh vagrant
+      become: true
+
+    - name: edit /etc/sudoers.d/vagrant
+      copy:
+        src: config/vagrant
+        dest: /etc/sudoers.d/vagrant
       become: true
