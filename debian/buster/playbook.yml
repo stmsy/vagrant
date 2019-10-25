@@ -4,7 +4,15 @@
   vars:
     vagrant_home: "/home/vagrant"
   tasks:
-    - name: install packages
+    - name: Update the APT package indexes
+      apt:
+        name: '*'
+        update_cache: yes
+        force_apt_get: yes
+        state: latest
+      become: yes
+
+    - name: Install packages
       apt:
         name:
           - emacs
@@ -30,76 +38,76 @@
         state: present
       become: true
 
-    - name: download config files
+    - name: Download Config Files from GitHub
       git:
         repo: https://github.com/stmsy/config.git
         dest: '{{ vagrant_home }}/github/config'
         version: master
 
-    - name: create /opt/git
+    - name: Create /opt/git
       file:
         path: /opt/git
         state: directory
       become: true
 
-    - name: symlink to gitbranch.sh
+    - name: Symlink to gitbranch.sh
       file:
         src: '{{ vagrant_home }}/github/config/git/gitbranch.sh'
         dest: /opt/git/gitbranch.sh
         state: link
       become: true
 
-    - name: create ~/.emacs.d/site-lisp
+    - name: Create ~/.emacs.d/site-lisp
       file:
         path: '{{ vagrant_home }}/.emacs.d/site-lisp'
         state: directory
 
-    - name: symlink to init.el
+    - name: Symlink to init.el
       file:
         src: '{{ vagrant_home }}/github/config/emacs/vagrant.init.el'
         dest: '{{ vagrant_home }}/.emacs.d/init.el'
         state: link
 
-    - name: install anything-config
+    - name: Install anything-config
       git:
         repo: https://repo.or.cz/anything-config.git
         dest: '{{ vagrant_home }}/.emacs.d/site-lisp/anything-config'
 
-    - name: install pyenv
+    - name: Install pyenv from GitHub
       git:
         repo: https://github.com/pyenv/pyenv.git
         dest: '{{ vagrant_home }}/.pyenv'
         version: master
 
-    - name: install pyenv-virtualenv
+    - name: Install pyenv-virtualenv from GitHub
       git:
         repo: https://github.com/pyenv/pyenv-virtualenv.git
         dest: '{{ vagrant_home }}/.pyenv/plugins/pyenv-virtualenv'
         version: master
 
-    - name: install rbenv
+    - name: Install rbenv from GitHub
       git:
         repo: https://github.com/rbenv/rbenv.git
         dest: '{{ vagrant_home }}/.rbenv'
         version: master
 
-    - name: install nodenv
+    - name: Install nodenv from GitHub
       git:
         repo: https://github.com/nodenv/nodenv.git
         dest: '{{ vagrant_home }}/.nodenv'
         version: master
 
-    - name: symlink to .zshrc
+    - name: Symlink to .zshrc
       file:
         src: '{{ vagrant_home }}/github/config/zsh/zshrc'
         dest: '{{ vagrant_home }}/.zshrc'
         state: link
 
-    - name: change zsh as login shell
+    - name: Change zsh as login shell
       shell: chsh -s /usr/bin/zsh vagrant
       become: true
 
-    - name: edit /etc/sudoers.d/vagrant
+    - name: Edit /etc/sudoers.d/vagrant
       copy:
         src: config/vagrant
         dest: /etc/sudoers.d/vagrant
