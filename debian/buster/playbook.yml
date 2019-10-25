@@ -56,7 +56,7 @@
 
     - name: symlink to init.el
       file:
-        src: '{{ vagrant_home }}/github/config/emacs/init.el'
+        src: '{{ vagrant_home }}/github/config/emacs/vagrant.init.el'
         dest: '{{ vagrant_home }}/.emacs.d/init.el'
         state: link
 
