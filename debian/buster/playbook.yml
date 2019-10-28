@@ -12,7 +12,7 @@
         state: latest
       become: yes
 
-    - name: Install packages
+    - name: Install Packages
       apt:
         name:
           - emacs
@@ -103,7 +103,7 @@
         dest: '{{ vagrant_home }}/.zshrc'
         state: link
 
-    - name: Change zsh as login shell
+    - name: Change zsh as Login Shell
       shell: chsh -s /usr/bin/zsh vagrant
       become: true
 
